@@ -1,4 +1,9 @@
-import { StandupEntry, NewStandupEntry } from '../types/standup';
+import {
+  StandupEntry,
+  NewStandupEntry,
+  StorageResult,
+  StorageError,
+} from '../types/standup';
 
 const STORAGE_KEY = 'standup-entries';
 
@@ -19,22 +24,48 @@ function isValidEntry(entry: unknown): entry is StandupEntry {
 }
 
 /**
- * Retrieves all standup entries from localStorage
- * Returns empty array if no entries or on error
+ * Determines the error type from a caught exception
  */
-export function getEntries(): StandupEntry[] {
+function getStorageError(error: unknown): StorageError {
+  if (error instanceof DOMException) {
+    if (error.name === 'QuotaExceededError') {
+      return {
+        type: 'QUOTA_EXCEEDED',
+        message: 'Storage is full. Please delete some entries to make room.',
+      };
+    }
+  }
+  if (error instanceof SyntaxError) {
+    return {
+      type: 'PARSE_ERROR',
+      message: 'Stored data is corrupted. Starting fresh.',
+    };
+  }
+  return {
+    type: 'UNKNOWN',
+    message: 'An unexpected error occurred while accessing storage.',
+  };
+}
+
+/**
+ * Retrieves all standup entries from localStorage
+ * Returns result object with entries or error
+ */
+export function getEntries(): StorageResult<StandupEntry[]> {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return [];
+    if (!data) return { success: true, data: [] };
 
     const parsed: unknown = JSON.parse(data);
-    if (!Array.isArray(parsed)) return [];
+    if (!Array.isArray(parsed)) {
+      return { success: true, data: [] };
+    }
 
     // Filter out any invalid entries
-    return parsed.filter(isValidEntry);
-  } catch {
-    console.error('Failed to load standup entries from localStorage');
-    return [];
+    return { success: true, data: parsed.filter(isValidEntry) };
+  } catch (error) {
+    console.error('Failed to load standup entries from localStorage:', error);
+    return { success: false, error: getStorageError(error) };
   }
 }
 
@@ -42,44 +73,51 @@ export function getEntries(): StandupEntry[] {
  * Saves a new standup entry to localStorage
  * Generates a unique ID for the entry
  */
-export function saveEntry(entry: NewStandupEntry): StandupEntry {
+export function saveEntry(
+  entry: NewStandupEntry
+): StorageResult<StandupEntry> {
   const newEntry: StandupEntry = {
     ...entry,
     id: crypto.randomUUID(),
   };
 
-  const entries = getEntries();
+  const result = getEntries();
+  const entries = result.success ? result.data ?? [] : [];
   entries.push(newEntry);
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  } catch {
-    console.error('Failed to save standup entry to localStorage');
-    throw new Error('Failed to save entry');
+    return { success: true, data: newEntry };
+  } catch (error) {
+    console.error('Failed to save standup entry to localStorage:', error);
+    return { success: false, error: getStorageError(error) };
   }
-
-  return newEntry;
 }
 
 /**
  * Deletes a standup entry by ID
- * Returns true if entry was found and deleted, false otherwise
+ * Returns result indicating success or failure
  */
-export function deleteEntry(id: string): boolean {
-  const entries = getEntries();
+export function deleteEntry(id: string): StorageResult<boolean> {
+  const result = getEntries();
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  const entries = result.data ?? [];
   const initialLength = entries.length;
   const filtered = entries.filter((entry) => entry.id !== id);
 
   if (filtered.length === initialLength) {
-    return false; // Entry not found
+    return { success: true, data: false }; // Entry not found
   }
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    return true;
-  } catch {
-    console.error('Failed to delete standup entry from localStorage');
-    throw new Error('Failed to delete entry');
+    return { success: true, data: true };
+  } catch (error) {
+    console.error('Failed to delete standup entry from localStorage:', error);
+    return { success: false, error: getStorageError(error) };
   }
 }
 
@@ -87,13 +125,20 @@ export function deleteEntry(id: string): boolean {
  * Retrieves entries from the last N days
  * Sorted by date descending (newest first)
  */
-export function getRecentEntries(days: number = 7): StandupEntry[] {
-  const entries = getEntries();
+export function getRecentEntries(
+  days: number = 7
+): StorageResult<StandupEntry[]> {
+  const result = getEntries();
+  if (!result.success) {
+    return result;
+  }
+
+  const entries = result.data ?? [];
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
   cutoffDate.setHours(0, 0, 0, 0);
 
-  return entries
+  const filtered = entries
     .filter((entry) => {
       const entryDate = new Date(entry.date);
       return entryDate >= cutoffDate;
@@ -104,4 +149,6 @@ export function getRecentEntries(days: number = 7): StandupEntry[] {
       if (dateCompare !== 0) return dateCompare;
       return a.name.localeCompare(b.name);
     });
+
+  return { success: true, data: filtered };
 }

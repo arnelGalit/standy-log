@@ -1,62 +1,104 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { StandupForm } from './components/StandupForm';
 import { StandupList } from './components/StandupList';
-import type { StandupEntry, NewStandupEntry } from './types/standup';
+import type { StandupEntry, NewStandupEntry, StorageError } from './types/standup';
 import { getRecentEntries, saveEntry, deleteEntry } from './utils/storage';
 import './App.css';
 
 function App() {
   const [entries, setEntries] = useState<StandupEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<StorageError | null>(null);
 
-  useEffect(() => {
-    const loadedEntries = getRecentEntries(7);
-    setEntries(loadedEntries);
+  const loadEntries = useCallback(() => {
+    setIsLoading(true);
+    setError(null);
+    const result = getRecentEntries(7);
+    if (result.success) {
+      setEntries(result.data ?? []);
+    } else {
+      setError(result.error ?? null);
+    }
     setIsLoading(false);
   }, []);
 
-  const handleSubmit = (newEntry: NewStandupEntry) => {
-    const savedEntry = saveEntry(newEntry);
-    setEntries((prev) => {
-      const updated = [savedEntry, ...prev];
-      return updated.sort((a, b) => {
-        const dateCompare = b.date.localeCompare(a.date);
-        if (dateCompare !== 0) return dateCompare;
-        return a.name.localeCompare(b.name);
-      });
-    });
-  };
+  useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
 
-  const handleDelete = (id: string) => {
-    const success = deleteEntry(id);
-    if (success) {
-      setEntries((prev) => prev.filter((entry) => entry.id !== id));
+  const handleSubmit = (newEntry: NewStandupEntry) => {
+    setError(null);
+    const result = saveEntry(newEntry);
+    if (result.success && result.data) {
+      setEntries((prev) => {
+        const updated = [result.data!, ...prev];
+        return updated.sort((a, b) => {
+          const dateCompare = b.date.localeCompare(a.date);
+          if (dateCompare !== 0) return dateCompare;
+          return a.name.localeCompare(b.name);
+        });
+      });
+    } else {
+      setError(result.error ?? null);
     }
   };
 
+  const handleDelete = (id: string) => {
+    setError(null);
+    const result = deleteEntry(id);
+    if (result.success && result.data) {
+      setEntries((prev) => prev.filter((entry) => entry.id !== id));
+    } else if (!result.success) {
+      setError(result.error ?? null);
+    }
+  };
+
+  const handleDismissError = () => {
+    setError(null);
+  };
+
   return (
-    <div className="app">
-      <header className="header">
-        <h1 className="title">Daily Standup Tracker</h1>
-        <p className="subtitle">Track your team's daily progress</p>
-      </header>
+    <ErrorBoundary>
+      <div className="app">
+        <header className="header">
+          <h1 className="title">Daily Standup Tracker</h1>
+          <p className="subtitle">Track your team's daily progress</p>
+        </header>
 
-      <main className="main">
-        <section className="formSection">
-          <h2 className="sectionTitle">New Standup Entry</h2>
-          <StandupForm onSubmit={handleSubmit} />
-        </section>
+        {error && (
+          <div className="errorBanner" role="alert">
+            <span className="errorText">{error.message}</span>
+            <button
+              className="errorDismiss"
+              onClick={handleDismissError}
+              aria-label="Dismiss error"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
-        <section className="listSection">
-          <h2 className="sectionTitle">Recent Entries</h2>
-          {isLoading ? (
-            <p className="loading">Loading entries...</p>
-          ) : (
-            <StandupList entries={entries} onDelete={handleDelete} />
-          )}
-        </section>
-      </main>
-    </div>
+        <main className="main">
+          <section className="formSection">
+            <h2 className="sectionTitle">New Standup Entry</h2>
+            <StandupForm onSubmit={handleSubmit} />
+          </section>
+
+          <section className="listSection">
+            <h2 className="sectionTitle">Recent Entries</h2>
+            {isLoading ? (
+              <div className="loadingContainer">
+                <div className="loadingSpinner" />
+                <p className="loading">Loading entries...</p>
+              </div>
+            ) : (
+              <StandupList entries={entries} onDelete={handleDelete} />
+            )}
+          </section>
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
 

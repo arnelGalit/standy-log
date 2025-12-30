@@ -87,4 +87,34 @@
   line-height: 1.5;
   color: #374151;
   white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Responsive Design */
+@media (max-width: 500px) {
+  .card {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .meta {
+    width: 100%;
+  }
+
+  .deleteButton {
+    width: 100%;
+    text-align: center;
+  }
+
+  .name {
+    font-size: 1rem;
+  }
+
+  .sectionText {
+    font-size: 0.875rem;
+  }
 }
