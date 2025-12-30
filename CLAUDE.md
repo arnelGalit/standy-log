@@ -116,6 +116,7 @@ getRecentEntries(days?: number): StorageResult<StandupEntry[]>
 
 ## Key Features Implemented
 - Form to capture standup data with validation
+- Date picker limited to past 7 days only
 - Display last 7 days of entries grouped by date
 - "Today" and "Yesterday" labels for recent dates
 - localStorage persistence with error handling
@@ -123,7 +124,7 @@ getRecentEntries(days?: number): StorageResult<StandupEntry[]>
 - Error boundary for crash protection
 - Loading states during localStorage operations
 - Dismissible error banner for storage errors
-- Form retains name/date after submission for convenience
+- Form retains date after submission for convenience
 - Responsive two-column layout (form + list)
 - Empty state messaging
 

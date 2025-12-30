@@ -79,7 +79,6 @@ function App() {
           </section>
 
           <section className="listSection">
-            <h2 className="sectionTitle">Recent Entries</h2>
             {isLoading ? (
               <div className="loadingContainer">
                 <div className="loadingSpinner" />

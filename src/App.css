@@ -14,7 +14,7 @@ body {
 }
 
 .app {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
@@ -72,13 +72,20 @@ body {
 
 .main {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 2rem;
+  align-items: flex-start;
 }
 
-.formSection,
+.formSection {
+  flex: 0 0 380px;
+  position: sticky;
+  top: 2rem;
+}
+
 .listSection {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
 .sectionTitle {
@@ -121,6 +128,22 @@ body {
 }
 
 /* Responsive Design */
+@media (max-width: 900px) {
+  .main {
+    flex-direction: column;
+  }
+
+  .formSection {
+    flex: none;
+    width: 100%;
+    position: static;
+  }
+
+  .listSection {
+    width: 100%;
+  }
+}
+
 @media (max-width: 600px) {
   .app {
     padding: 1rem 0.75rem;
