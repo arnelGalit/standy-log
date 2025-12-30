@@ -12,23 +12,27 @@ A single-page React application for teams to log daily standup entries with loca
 
 ## Project Structure
 ```
-standup-tracker/
-├── src/
-│   ├── components/
-│   │   ├── StandupForm.tsx
-│   │   ├── StandupList.tsx
-│   │   └── StandupEntry.tsx
-│   ├── types/
-│   │   └── standup.ts
-│   ├── utils/
-│   │   └── storage.ts
-│   ├── App.tsx
-│   ├── App.css
-│   └── main.tsx
-├── index.html
-├── package.json
-├── tsconfig.json
-└── vite.config.ts
+ standup-tracker/
+  ├── src/
+  │   ├── components/
+  │   │   ├── StandupForm.tsx      
+  │   │   ├── StandupList.tsx     
+  │   │   └── StandupEntry.tsx   
+  │   ├── types/
+  │   │   └── standup.ts         
+  │   ├── utils/
+  │   │   └── storage.ts        
+  │   ├── App.tsx        
+  │   ├── App.css                
+  │   ├── main.tsx             
+  │   └── vite-env.d.ts    
+  ├── index.html
+  ├── package.json
+  ├── package-lock.json
+  ├── tsconfig.json
+  ├── vite.config.ts
+  ├── eslint.config.js
+  └── CLAUDE.md
 ```
 
 ## Core Types
