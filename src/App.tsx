@@ -30,15 +30,8 @@ function App() {
   const handleSubmit = (newEntry: NewStandupEntry) => {
     setError(null);
     const result = saveEntry(newEntry);
-    if (result.success && result.data) {
-      setEntries((prev) => {
-        const updated = [result.data!, ...prev];
-        return updated.sort((a, b) => {
-          const dateCompare = b.date.localeCompare(a.date);
-          if (dateCompare !== 0) return dateCompare;
-          return a.name.localeCompare(b.name);
-        });
-      });
+    if (result.success) {
+      loadEntries();
     } else {
       setError(result.error ?? null);
     }

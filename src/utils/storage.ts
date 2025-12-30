@@ -135,12 +135,14 @@ export function getRecentEntries(
 
   const entries = result.data ?? [];
   const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - days);
+  cutoffDate.setDate(cutoffDate.getDate() - (days - 1));
   cutoffDate.setHours(0, 0, 0, 0);
 
   const filtered = entries
     .filter((entry) => {
-      const entryDate = new Date(entry.date);
+      // Parse date string as local time to avoid timezone issues
+      const [year, month, day] = entry.date.split('-').map(Number);
+      const entryDate = new Date(year, month - 1, day);
       return entryDate >= cutoffDate;
     })
     .sort((a, b) => {

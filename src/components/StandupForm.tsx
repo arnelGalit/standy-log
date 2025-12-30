@@ -7,7 +7,11 @@ interface StandupFormProps {
 }
 
 function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0];
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function StandupForm({ onSubmit }: StandupFormProps) {
@@ -30,7 +34,8 @@ export function StandupForm({ onSubmit }: StandupFormProps) {
 
     onSubmit(entry);
 
-    // Reset form but keep name and date for convenience
+    // Reset form but keep date for convenience
+    setName('');
     setYesterday('');
     setToday('');
     setBlockers('');
@@ -86,6 +91,7 @@ export function StandupForm({ onSubmit }: StandupFormProps) {
             className={styles.input}
             value={date}
             onChange={handleDateChange}
+            max={getTodayDate()}
             required
           />
         </div>
